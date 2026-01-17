@@ -9,7 +9,23 @@
 </head>
 
 <body class="admin-body">
-    <div class="admin-container">
+    <!-- Password Protection -->
+    <div id="loginOverlay" class="login-overlay">
+        <div class="card login-card">
+            <div class="logo">
+                <div class="logo-icon">🔒</div>
+                <h1>Đăng Nhập Admin</h1>
+            </div>
+            <div class="input-group">
+                <label for="adminPassword">Mật Khẩu</label>
+                <input type="password" id="adminPassword" placeholder="Nhập mật khẩu admin">
+            </div>
+            <button id="loginBtn" class="btn-primary">Đăng Nhập</button>
+            <div id="loginError" class="error-message" style="display: none;">Sai mật khẩu!</div>
+        </div>
+    </div>
+
+    <div class="admin-container" id="adminContainer" style="display: none;">
         <header class="admin-header">
             <div class="header-left">
                 <h1>🔐 Quản Lý 2FA</h1>
@@ -180,6 +196,33 @@
     </div>
 
     <script>
+        // ========== ADMIN PASSWORD - ĐỔI MẬT KHẨU Ở ĐÂY ==========
+        const ADMIN_PASSWORD = 'Buitheanh91';  // <-- Đổi mật khẩu ở đây
+        // =========================================================
+
+        // Login check
+        const savedLogin = sessionStorage.getItem('adminLoggedIn');
+        if (savedLogin === 'true') {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('adminContainer').style.display = 'block';
+        }
+
+        document.getElementById('loginBtn').addEventListener('click', checkLogin);
+        document.getElementById('adminPassword').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkLogin();
+        });
+
+        function checkLogin() {
+            const password = document.getElementById('adminPassword').value;
+            if (password === ADMIN_PASSWORD) {
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('adminContainer').style.display = 'block';
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
+        }
+
         let accounts = [];
         let editingId = null;
 
