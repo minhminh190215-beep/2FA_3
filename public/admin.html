@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Quản Lý 2FA</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="admin-body">
+    <div class="admin-container">
+        <header class="admin-header">
+            <div class="header-left">
+                <h1>🔐 Quản Lý 2FA</h1>
+            </div>
+            <div class="header-right">
+                <a href="index.html" class="btn-link">← Trang Chủ</a>
+            </div>
+        </header>
+
+        <nav class="admin-nav">
+            <button class="nav-btn active" data-tab="accounts">📋 Tài Khoản</button>
+            <button class="nav-btn" data-tab="products">🛒 Sản Phẩm</button>
+            <button class="nav-btn" data-tab="logs">📊 Lịch Sử</button>
+        </nav>
+
+        <main class="admin-main">
+            <!-- Accounts Tab -->
+            <section id="accountsTab" class="tab-content active">
+                <div class="toolbar">
+                    <button id="addBtn" class="btn-primary">➕ Thêm Tài Khoản</button>
+                    <label class="btn-secondary file-btn">
+                        📥 Import CSV
+                        <input type="file" id="importFile" accept=".csv" style="display: none;">
+                    </label>
+                    <button id="exportBtn" class="btn-secondary">📤 Export CSV</button>
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="🔍 Tìm kiếm email...">
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table id="accountsTable">
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Secret Key</th>
+                                <th>Ghi Chú</th>
+                                <th>Ngày Tạo</th>
+                                <th>Code Hiện Tại</th>
+                                <th>Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accountsBody">
+                            <!-- Dynamic content -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <div class="empty-icon">📭</div>
+                    <p>Chưa có tài khoản nào</p>
+                    <button class="btn-primary" onclick="document.getElementById('addBtn').click()">Thêm tài khoản đầu
+                        tiên</button>
+                </div>
+            </section>
+
+            <!-- Logs Tab -->
+            <section id="logsTab" class="tab-content">
+                <div class="toolbar">
+                    <button id="clearLogsBtn" class="btn-danger">🗑️ Xóa Tất Cả Log</button>
+                    <div class="log-stats">
+                        <span id="totalLogs">0</span> lượt truy cập
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table id="logsTable">
+                        <thead>
+                            <tr>
+                                <th>Thời Gian</th>
+                                <th>Email</th>
+                                <th>IP</th>
+                                <th>Trạng Thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsBody">
+                            <!-- Dynamic content -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Products Tab -->
+            <section id="productsTab" class="tab-content">
+                <div class="toolbar">
+                    <button id="addProductBtn" class="btn-primary">➕ Thêm Sản Phẩm</button>
+                </div>
+
+                <div class="table-container">
+                    <table id="productsTable">
+                        <thead>
+                            <tr>
+                                <th>Tên Sản Phẩm</th>
+                                <th>Giá</th>
+                                <th>Ngày Tạo</th>
+                                <th>Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsBody">
+                            <!-- Dynamic content -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="emptyProductState" class="empty-state" style="display: none;">
+                    <div class="empty-icon">🛒</div>
+                    <p>Chưa có sản phẩm nào</p>
+                    <button class="btn-primary" onclick="document.getElementById('addProductBtn').click()">Thêm sản phẩm
+                        đầu tiên</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Add/Edit Account -->
+    <div id="modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Thêm Tài Khoản</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="accountForm">
+                <input type="hidden" id="accountId">
+                <div class="form-group">
+                    <label for="accountEmail">Email *</label>
+                    <input type="email" id="accountEmail" required placeholder="example@gmail.com">
+                </div>
+                <div class="form-group">
+                    <label for="accountSecret">Secret Key (2FA) *</label>
+                    <input type="text" id="accountSecret" required placeholder="JBSWY3DPEHPK3PXP">
+                    <small>Mã secret từ Google Authenticator (16-32 ký tự)</small>
+                </div>
+                <div class="form-group">
+                    <label for="accountNote">Ghi Chú</label>
+                    <input type="text" id="accountNote" placeholder="Ghi chú (tùy chọn)">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeModal()">Hủy</button>
+                    <button type="submit" class="btn-primary">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Add/Edit Product -->
+    <div id="productModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="productModalTitle">Thêm Sản Phẩm</h2>
+                <button class="modal-close" onclick="closeProductModal()">&times;</button>
+            </div>
+            <form id="productForm">
+                <input type="hidden" id="productId">
+                <div class="form-group">
+                    <label for="productName">Tên Sản Phẩm *</label>
+                    <input type="text" id="productName" required placeholder="Ví dụ: Capcut Pro 30 ngày">
+                </div>
+                <div class="form-group">
+                    <label for="productPrice">Giá *</label>
+                    <input type="text" id="productPrice" required placeholder="Ví dụ: 50k, 1tr, 200k">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeProductModal()">Hủy</button>
+                    <button type="submit" class="btn-primary">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let accounts = [];
+        let editingId = null;
+
+        // Tab navigation
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(`${btn.dataset.tab}Tab`).classList.add('active');
+
+                if (btn.dataset.tab === 'logs') loadLogs();
+            });
+        });
+
+        // Load accounts on page load
+        loadAccounts();
+
+        async function loadAccounts() {
+            try {
+                const res = await fetch('/api/accounts');
+                accounts = await res.json();
+                renderAccounts();
+            } catch (err) {
+                console.error('Failed to load accounts:', err);
+            }
+        }
+
+        function renderAccounts(filter = '') {
+            const tbody = document.getElementById('accountsBody');
+            const emptyState = document.getElementById('emptyState');
+            const filtered = filter
+                ? accounts.filter(a => a.email.toLowerCase().includes(filter.toLowerCase()))
+                : accounts;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            tbody.innerHTML = filtered.map(acc => `
+        <tr>
+          <td class="email-cell">${escapeHtml(acc.email)}</td>
+          <td class="secret-cell">
+            <span class="secret-hidden">••••••••••••</span>
+            <button class="btn-icon" onclick="toggleSecret(this, '${escapeHtml(acc.secret)}')">👁️</button>
+          </td>
+          <td>${escapeHtml(acc.note || '-')}</td>
+          <td>${formatDate(acc.created_at)}</td>
+          <td class="code-cell" id="code-${acc.id}">
+            <span class="live-code">------</span>
+          </td>
+          <td class="actions-cell">
+            <button class="btn-icon" onclick="editAccount(${acc.id})" title="Sửa">✏️</button>
+            <button class="btn-icon btn-danger" onclick="deleteAccount(${acc.id})" title="Xóa">🗑️</button>
+          </td>
+        </tr>
+      `).join('');
+
+            // Generate live codes
+            filtered.forEach(acc => {
+                generateLiveCode(acc.id, acc.secret);
+            });
+        }
+
+        function generateLiveCode(id, secret) {
+            const cell = document.getElementById(`code-${id}`);
+            if (!cell) return;
+
+            fetch('/api/get-code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: accounts.find(a => a.id === id)?.email })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.code) {
+                        cell.querySelector('.live-code').textContent = data.code;
+                    }
+                })
+                .catch(() => { });
+        }
+
+        function toggleSecret(btn, secret) {
+            const span = btn.previousElementSibling;
+            if (span.textContent === '••••••••••••') {
+                span.textContent = secret;
+                btn.textContent = '🙈';
+            } else {
+                span.textContent = '••••••••••••';
+                btn.textContent = '👁️';
+            }
+        }
+
+        // Search
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            renderAccounts(e.target.value);
+        });
+
+        // Add button
+        document.getElementById('addBtn').addEventListener('click', () => {
+            editingId = null;
+            document.getElementById('modalTitle').textContent = 'Thêm Tài Khoản';
+            document.getElementById('accountForm').reset();
+            document.getElementById('modal').style.display = 'flex';
+        });
+
+        function editAccount(id) {
+            const acc = accounts.find(a => a.id === id);
+            if (!acc) return;
+
+            editingId = id;
+            document.getElementById('modalTitle').textContent = 'Sửa Tài Khoản';
+            document.getElementById('accountEmail').value = acc.email;
+            document.getElementById('accountSecret').value = acc.secret;
+            document.getElementById('accountNote').value = acc.note || '';
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+            editingId = null;
+        }
+
+        // Form submit
+        document.getElementById('accountForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = {
+                email: document.getElementById('accountEmail').value,
+                secret: document.getElementById('accountSecret').value,
+                note: document.getElementById('accountNote').value
+            };
+
+            if (editingId) {
+                data.id = editingId;
+            }
+
+            try {
+                const res = await fetch('/api/accounts', {
+                    method: editingId ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+
+                if (!res.ok) {
+                    alert(result.error);
+                    return;
+                }
+
+                closeModal();
+                loadAccounts();
+            } catch (err) {
+                alert('Có lỗi xảy ra');
+            }
+        });
+
+        async function deleteAccount(id) {
+            if (!confirm('Bạn có chắc muốn xóa tài khoản này?')) return;
+
+            try {
+                await fetch('/api/accounts', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                loadAccounts();
+            } catch (err) {
+                alert('Có lỗi xảy ra');
+            }
+        }
+
+        // Import CSV
+        document.getElementById('importFile').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch('/api/import', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await res.json();
+                alert(result.message || result.error);
+                loadAccounts();
+            } catch (err) {
+                alert('Có lỗi xảy ra khi import');
+            }
+
+            e.target.value = '';
+        });
+
+        // Export CSV
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            window.location.href = '/api/export';
+        });
+
+        // Logs
+        async function loadLogs() {
+            try {
+                const res = await fetch('/api/logs');
+                const logs = await res.json();
+
+                document.getElementById('totalLogs').textContent = logs.length;
+
+                const tbody = document.getElementById('logsBody');
+                tbody.innerHTML = logs.map(log => `
+          <tr class="${log.success ? '' : 'log-failed'}">
+            <td>${formatDateTime(log.accessed_at)}</td>
+            <td>${escapeHtml(log.email)}</td>
+            <td>${escapeHtml(log.ip)}</td>
+            <td>${log.success
+                        ? '<span class="badge badge-success">✅ Thành công</span>'
+                        : '<span class="badge badge-danger">❌ Thất bại</span>'}</td>
+          </tr>
+        `).join('');
+            } catch (err) {
+                console.error('Failed to load logs:', err);
+            }
+        }
+
+        document.getElementById('clearLogsBtn').addEventListener('click', async () => {
+            if (!confirm('Bạn có chắc muốn xóa tất cả lịch sử?')) return;
+
+            try {
+                await fetch('/api/logs', { method: 'DELETE' });
+                loadLogs();
+            } catch (err) {
+                alert('Có lỗi xảy ra');
+            }
+        });
+
+        // Utilities
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('vi-VN');
+        }
+
+        function formatDateTime(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            return d.toLocaleString('vi-VN');
+        }
+
+        // Refresh codes every 30 seconds
+        setInterval(() => {
+            if (document.getElementById('accountsTab').classList.contains('active')) {
+                accounts.forEach(acc => generateLiveCode(acc.id, acc.secret));
+            }
+        }, 30000);
+
+        // Close modal on outside click
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') closeModal();
+        });
+
+        document.getElementById('productModal').addEventListener('click', (e) => {
+            if (e.target.id === 'productModal') closeProductModal();
+        });
+
+        // ==================== PRODUCTS ====================
+        let products = [];
+        let editingProductId = null;
+
+        // Load products when tab is clicked
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.dataset.tab === 'products') loadProducts();
+            });
+        });
+
+        async function loadProducts() {
+            try {
+                const res = await fetch('/api/products');
+                products = await res.json();
+                renderProducts();
+            } catch (err) {
+                console.error('Failed to load products:', err);
+            }
+        }
+
+        function renderProducts() {
+            const tbody = document.getElementById('productsBody');
+            const emptyState = document.getElementById('emptyProductState');
+
+            if (products.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            tbody.innerHTML = products.map(prod => `
+                <tr>
+                    <td>${escapeHtml(prod.name)}</td>
+                    <td><span class="product-price">${escapeHtml(prod.price)}</span></td>
+                    <td>${formatDate(prod.created_at)}</td>
+                    <td class="actions-cell">
+                        <button class="btn-icon" onclick="editProduct(${prod.id})" title="Sửa">✏️</button>
+                        <button class="btn-icon btn-danger" onclick="deleteProduct(${prod.id})" title="Xóa">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        document.getElementById('addProductBtn').addEventListener('click', () => {
+            editingProductId = null;
+            document.getElementById('productModalTitle').textContent = 'Thêm Sản Phẩm';
+            document.getElementById('productForm').reset();
+            document.getElementById('productModal').style.display = 'flex';
+        });
+
+        function editProduct(id) {
+            const prod = products.find(p => p.id === id);
+            if (!prod) return;
+
+            editingProductId = id;
+            document.getElementById('productModalTitle').textContent = 'Sửa Sản Phẩm';
+            document.getElementById('productName').value = prod.name;
+            document.getElementById('productPrice').value = prod.price;
+            document.getElementById('productModal').style.display = 'flex';
+        }
+
+        function closeProductModal() {
+            document.getElementById('productModal').style.display = 'none';
+            editingProductId = null;
+        }
+
+        document.getElementById('productForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = {
+                name: document.getElementById('productName').value,
+                price: document.getElementById('productPrice').value
+            };
+
+            if (editingProductId) {
+                data.id = editingProductId;
+            }
+
+            try {
+                const res = await fetch('/api/products', {
+                    method: editingProductId ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+
+                if (!res.ok) {
+                    alert(result.error);
+                    return;
+                }
+
+                closeProductModal();
+                loadProducts();
+            } catch (err) {
+                alert('Có lỗi xảy ra');
+            }
+        });
+
+        async function deleteProduct(id) {
+            if (!confirm('Bạn có chắc muốn xóa sản phẩm này?')) return;
+
+            try {
+                await fetch('/api/products', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                loadProducts();
+            } catch (err) {
+                alert('Có lỗi xảy ra');
+            }
+        }
+    </script>
+</body>
+
+</html>

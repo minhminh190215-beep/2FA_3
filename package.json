@@ -1,0 +1,13 @@
+{
+  "name": "2fa-code-generator",
+  "version": "1.0.0",
+  "description": "Web application for customers to get 2FA codes",
+  "scripts": {
+    "start": "node server.js",
+    "vercel-build": "echo 'No build needed'"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.5.0",
+    "otplib": "^12.0.1"
+  }
+}
