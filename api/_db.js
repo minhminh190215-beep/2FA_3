@@ -1,21 +1,21 @@
-import { createClient } from '@libsql/client';
+const { createClient } = require('@libsql/client');
 
 let db = null;
 
-export function getDb() {
-    if (!db) {
-        db = createClient({
-            url: process.env.TURSO_DATABASE_URL,
-            authToken: process.env.TURSO_AUTH_TOKEN
-        });
-    }
-    return db;
+function getDb() {
+  if (!db) {
+    db = createClient({
+      url: process.env.TURSO_DATABASE_URL,
+      authToken: process.env.TURSO_AUTH_TOKEN
+    });
+  }
+  return db;
 }
 
-export async function initDb() {
-    const db = getDb();
+async function initDb() {
+  const database = getDb();
 
-    await db.execute(`
+  await database.execute(`
     CREATE TABLE IF NOT EXISTS accounts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT UNIQUE NOT NULL,
@@ -25,7 +25,7 @@ export async function initDb() {
     )
   `);
 
-    await db.execute(`
+  await database.execute(`
     CREATE TABLE IF NOT EXISTS logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT NOT NULL,
@@ -35,7 +35,7 @@ export async function initDb() {
     )
   `);
 
-    await db.execute(`
+  await database.execute(`
     CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -44,5 +44,7 @@ export async function initDb() {
     )
   `);
 
-    return db;
+  return database;
 }
+
+module.exports = { getDb, initDb };
